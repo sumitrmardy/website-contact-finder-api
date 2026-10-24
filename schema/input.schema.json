@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sumitrmardy/website-contact-finder-api/schema/input.schema.json",
+  "title": "Website Contact Finder — input body",
+  "type": "object",
+  "properties": {
+    "domains": {
+      "title": "Domains",
+      "type": "array",
+      "description": "Domains or URLs to search for contact details. One row is returned per domain, and only domains where a contact is found are charged.",
+      "editor": "stringList",
+      "prefill": [
+        "angelnumbercodex.com",
+        "stripe.com",
+        "mud-dock.co.uk",
+        "violinshop.com"
+      ]
+    },
+    "startUrls": {
+      "title": "Start URLs (optional)",
+      "type": "array",
+      "description": "Same thing in Apify's URL-list format, for chaining after another actor. Merged with `domains`.",
+      "editor": "requestListSources"
+    },
+    "concurrency": {
+      "title": "Concurrency",
+      "type": "integer",
+      "description": "How many domains to crawl at once. 15 is a good default; raising it does not reduce cost, because cost follows total runtime.",
+      "default": 15,
+      "minimum": 1,
+      "maximum": 50
+    },
+    "maxPagesPerDomain": {
+      "title": "Maximum pages per domain",
+      "type": "integer",
+      "description": "Crawling stops as soon as both an email and a phone number are found, so most domains use one or two pages of this budget.",
+      "default": 5,
+      "minimum": 1,
+      "maximum": 12
+    },
+    "timeoutMs": {
+      "title": "Per-request timeout (ms)",
+      "type": "integer",
+      "description": "A slow host is reported as unreachable rather than holding up the run. Raising this trades runtime for a few more slow sites.",
+      "default": 8000,
+      "minimum": 1000,
+      "maximum": 30000
+    },
+    "domainBudgetMs": {
+      "title": "Per-domain budget (ms)",
+      "type": "integer",
+      "description": "Wall-clock cap for one domain across all its pages.",
+      "default": 45000,
+      "minimum": 5000,
+      "maximum": 120000
+    },
+    "useProxy": {
+      "title": "Use Apify Proxy (datacenter)",
+      "type": "boolean",
+      "description": "Strongly recommended. Measured on a 100-domain sample: six domains that answered a direct connection with 403 or nothing were reachable through rotating datacenter IPs.",
+      "default": true
+    },
+    "allowInsecureTls": {
+      "title": "Read sites with an invalid certificate",
+      "type": "boolean",
+      "description": "Small business sites let certificates expire. Only public pages are read and nothing is ever submitted, so the risk is bad data rather than exposed data.",
+      "default": true
+    },
+    "defaultCountry": {
+      "title": "Default country for phone numbers",
+      "type": "string",
+      "description": "ISO country code (GB, US, AU...) used as the fallback for local-format phone numbers. It applies only when the domain's ccTLD, the site's structured data and the page itself (its language region, a UK or Canadian postcode, the numbers on it) all fail to point to a country.",
+      "editor": "textfield",
+      "default": "US"
+    },
+    "proxyGroups": {
+      "title": "Proxy groups (optional)",
+      "type": "array",
+      "description": "Leave empty for Apify's default datacenter pool. Set [\"RESIDENTIAL\"] only if datacenter IPs are being blocked on your lists — residential traffic is billed per gigabyte.",
+      "editor": "stringList",
+      "default": []
+    }
+  },
+  "required": [
+    "domains"
+  ]
+}

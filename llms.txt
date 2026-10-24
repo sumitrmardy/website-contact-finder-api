@@ -1,0 +1,28 @@
+# Website Contact Finder API
+
+> Fast company contact discovery (emails, phones, social links) on Apify.
+> Pay-per-event pricing: only pay when contacts are found.
+
+## Capabilities
+
+- Finds business email addresses, normalized E.164 phone numbers, and social links
+- Pay-per-event: blocked, unreachable, or contact-less domains are completely free ($0.006/domain down to $0.003 on Gold)
+- Smart crawl termination when both email and phone are discovered
+- Native handoff to Email Verifier for SMTP validation
+
+## Endpoints
+
+- Synchronous Actor run: `POST https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items`
+- Actor Store: https://apify.com/sumitr_mardy/website-contact-finder
+- Pricing: https://apify.com/sumitr_mardy/website-contact-finder/pricing
+- Repository: https://github.com/sumitrmardy/website-contact-finder-api
+
+## Output Schema Summary
+
+- `domain` (string): Searched domain
+- `status` (string): `contacts_found` | `no_contacts_found` | `blocked` | `unreachable`
+- `sub_status` (string): `email_and_phone` | `email_only` | `phone_only` | `none`
+- `emails` (array): `[{"email": "...", "type": "...", "on_site_domain": true}]`
+- `phones` (array): `[{"e164": "+44...", "raw": "...", "country": "GB"}]`
+- `socials` (array): `[{"network": "linkedin", "url": "..."}]`
+- `pages_crawled` (integer): Number of pages fetched

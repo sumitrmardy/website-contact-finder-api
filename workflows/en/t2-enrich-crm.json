@@ -1,0 +1,163 @@
+{
+  "name": "Enrich new CRM companies on creation (HubSpot / Pipedrive)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Real-time CRM Company Enrichment\n\nTriggers whenever a new company is created in HubSpot or Pipedrive. Extracts the company domain, crawls for emails and phone numbers, and updates company properties.\n\n## Setup (once)\n\n**1. Get an Apify token** — https://console.apify.com/settings/integrations\n\n**2. Create the n8n credential**\nCredentials → New → **Header Auth**\n- Name: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer YOUR_APIFY_TOKEN`\n\nEvery HTTP node here points at that credential by name. No token is stored in this file.\n\n## Cost\n\nPay-per-event: $0.006 per domain where a contact (email or phone) is found (down to $0.003 on Gold tier, from $3.00 per 1,000). Blocked, unreachable, and zero-contact domains are completely free.\n\nCurrent pricing: https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor: https://apify.com/sumitr_mardy/website-contact-finder\nTemplates & docs: https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t2-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "company.created",
+        "options": {}
+      },
+      "id": "t2-trigger",
+      "name": "New Company Created",
+      "type": "n8n-nodes-base.hubspotTrigger",
+      "typeVersion": 1,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.properties && $json.properties.domain ? $json.properties.domain.value : $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t2-find",
+      "name": "Find contacts (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "149c2e0f-7818-497a-9ee6-d955bcd22595",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "contacts_found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "t2-filter",
+      "name": "Filter contacts found",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "company",
+        "operation": "update",
+        "companyId": "={{ $('New Company Created').item.json.objectId || $('New Company Created').item.json.id }}",
+        "updateFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "phone",
+                "value": "={{ ($json.phones && $json.phones[0] && ($json.phones[0].e164 || $json.phones[0].raw)) || '' }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "t2-update-crm",
+      "name": "Update Company in CRM",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "New Company Created": {
+      "main": [
+        [
+          {
+            "node": "Find contacts (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find contacts (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Filter contacts found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter contacts found": {
+      "main": [
+        [
+          {
+            "node": "Update Company in CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

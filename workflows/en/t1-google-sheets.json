@@ -1,0 +1,169 @@
+{
+  "name": "Enrich a Google Sheets list of domains with contacts",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Enrich Google Sheets with Contacts\n\nReads domains from Google Sheets, finds emails, phones, and social links, and writes the results back. Re-running only processes un-enriched rows.\n\n## Columns in your sheet\n`domain` · `status` · `emails` · `phones` · `socials` · `enriched_at`\n\n## Setup (once)\n\n**1. Get an Apify token** — https://console.apify.com/settings/integrations\n\n**2. Create the n8n credential**\nCredentials → New → **Header Auth**\n- Name: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer YOUR_APIFY_TOKEN`\n\nEvery HTTP node here points at that credential by name. No token is stored in this file.\n\n## Cost\n\nPay-per-event: $0.006 per domain where a contact (email or phone) is found (down to $0.003 on Gold tier, from $3.00 per 1,000). Blocked, unreachable, and zero-contact domains are completely free.\n\nCurrent pricing: https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor: https://apify.com/sumitr_mardy/website-contact-finder\nTemplates & docs: https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t1-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "t1-read-sheet-manual",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "t1-read-sheet",
+      "name": "Read domains from Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t1-find",
+      "name": "Find contacts (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const r = item.json;\n  return {\n    json: {\n      domain: r.domain || '',\n      status: r.status || '',\n      emails: (r.emails || []).map(e => e.email).join(', '),\n      phones: (r.phones || []).map(p => p.e164 || p.raw).join(', '),\n      socials: (r.socials || []).map(s => s.url).join(', '),\n      enriched_at: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "id": "t1-format",
+      "name": "Format contact data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        }
+      },
+      "id": "t1-write-sheet",
+      "name": "Write contacts to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Read domains from Sheet": {
+      "main": [
+        [
+          {
+            "node": "Find contacts (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find contacts (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Format contact data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format contact data": {
+      "main": [
+        [
+          {
+            "node": "Write contacts to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Read domains from Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

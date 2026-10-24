@@ -1,0 +1,46 @@
+{
+    "common": {
+        "credentialNote": "## Setup (once)\n\n**1. Get an Apify token** — __link.apifyTokenUrl__\n\n**2. Create the n8n credential**\nCredentials → New → **Header Auth**\n- Name: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer YOUR_APIFY_TOKEN`\n\nEvery HTTP node here points at that credential by name. No token is stored in this file.",
+        "costNote": "## Cost\n\nPay-per-event: $0.006 per domain where a contact (email or phone) is found (down to $0.003 on Gold tier, from __link.priceFromPer1k__ per 1,000). Blocked, unreachable, and zero-contact domains are completely free.\n\nCurrent pricing: __link.actorPricingUrl__",
+        "actorNote": "Actor: __link.actorUrl__\nTemplates & docs: __link.repoUrl__"
+    },
+
+    "t1": {
+        "name": "Enrich a Google Sheets list of domains with contacts",
+        "sticky": "# Enrich Google Sheets with Contacts\n\nReads domains from Google Sheets, finds emails, phones, and social links, and writes the results back. Re-running only processes un-enriched rows.\n\n## Columns in your sheet\n`domain` · `status` · `emails` · `phones` · `socials` · `enriched_at`\n\n__i18n.common.credentialNote__\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "sheetReadName": "Read domains from Sheet",
+        "findName": "Find contacts (Apify)",
+        "formatName": "Format contact data",
+        "sheetWriteName": "Write contacts to Sheet"
+    },
+
+    "t2": {
+        "name": "Enrich new CRM companies on creation (HubSpot / Pipedrive)",
+        "sticky": "# Real-time CRM Company Enrichment\n\nTriggers whenever a new company is created in HubSpot or Pipedrive. Extracts the company domain, crawls for emails and phone numbers, and updates company properties.\n\n__i18n.common.credentialNote__\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "triggerName": "New Company Created",
+        "findName": "Find contacts (Apify)",
+        "filterName": "Filter contacts found",
+        "updateCrmName": "Update Company in CRM"
+    },
+
+    "t3": {
+        "name": "Contact Finder to Email Verifier Pipeline (Find → Verify → Keep Deliverable)",
+        "sticky": "# Contact Finder to Verifier Chain\n\nScrapes contact emails for a list of company domains, then immediately chains them into the Email Verifier Actor to confirm mailboxes exist. Only keeps deliverable addresses for cold outreach.\n\n__i18n.common.credentialNote__\n\n## Why chain with verification\nContact scrapers find mailto links and text patterns, but some inboxes are defunct. Chaining verification drops invalid syntax and dead mailboxes before they hit your sending domain.\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "triggerName": "Domains input",
+        "findName": "Find contacts (Apify)",
+        "extractEmailsName": "Extract found email list",
+        "verifyName": "Verify emails (Apify)",
+        "filterDeliverableName": "Filter deliverable leads"
+    },
+
+    "t4": {
+        "name": "AI Agent tool: look up company contact details",
+        "sticky": "# Give an AI Agent the ability to look up contacts\n\nAn AI Agent with a tool to find emails, phone numbers, and social media links for any business domain. Ask it: *\"Find contact info for acme.com\"*.\n\n__i18n.common.credentialNote__\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "chatTriggerName": "When chat message received",
+        "agentName": "Contact Research Agent",
+        "toolName": "Find Contacts Tool",
+        "modelName": "Chat model",
+        "toolDescription": "Searches a website or business domain for contact information (emails, phones, social links, addresses). Provide an array of domains in `domains`.",
+        "systemPrompt": "You are a sales intelligence assistant. When asked for contact details about a company, use the Find Contacts Tool. Summarize all discovered emails, phone numbers (with E.164 formatted numbers), and social profiles clearly. If no contacts are found, explain that the domain is either unreachable or publishes no public contact info."
+    }
+}

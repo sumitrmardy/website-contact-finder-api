@@ -1,0 +1,46 @@
+{
+    "common": {
+        "credentialNote": "## 配置（仅需一次）\n\n**1. 获取 Apify Token** — __link.apifyTokenUrl__\n\n**2. 创建 n8n 凭据**\n凭据 → 新建 → **Header Auth**\n- 名称: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer 你的_APIFY_TOKEN`\n\n所有 HTTP 节点均已配置指向该凭据，工作流文件中不包含任何密钥。",
+        "costNote": "## 计费说明\n\n按事件付费：成功找到联系方式（邮箱或电话）的域名每个 $0.006（Gold 阶梯低至 $0.003，千个起价 __link.priceFromPer1k__）。被拦截、无法访问或无联系信息的域名完全免费。\n\n当前价格详情：__link.actorPricingUrl__",
+        "actorNote": "Actor 页面：__link.actorUrl__\n模板与开源仓库：__link.repoUrl__"
+    },
+
+    "t1": {
+        "name": "从 Google 表格批量抓取企业联系方式 (邮箱、电话、社媒)",
+        "sticky": "# Google 表格企业域名联系人挖掘\n\n从 Google 表格读取待查询域名，自动挖掘企业邮箱、电话与社交媒体链接，并将结果写回表格。重复运行仅处理未补全的行。\n\n## 表格所需列\n`domain` · `status` · `emails` · `phones` · `socials` · `enriched_at`\n\n__i18n.common.credentialNote__\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "sheetReadName": "从表格读取域名",
+        "findName": "查询联系方式 (Apify)",
+        "formatName": "格式化联系人数据",
+        "sheetWriteName": "写入联系人至表格"
+    },
+
+    "t2": {
+        "name": "CRM 新建企业自动补全联系人 (HubSpot / Pipedrive)",
+        "sticky": "# 实时 CRM 企业信息补全\n\n当 HubSpot 或 Pipedrive 创建新企业时自动触发，提取官网域名，抓取企业电话与邮箱并更新回 CRM 属性。\n\n__i18n.common.credentialNote__\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "triggerName": "新建企业触发器",
+        "findName": "查询联系方式 (Apify)",
+        "filterName": "过滤有结果的企业",
+        "updateCrmName": "更新企业资料至 CRM"
+    },
+
+    "t3": {
+        "name": "联系人挖掘与邮箱真实性校验流水线 (挖掘 → 校验 → 保留有效邮箱)",
+        "sticky": "# 挖掘 + 验证联锁流水线\n\n先批量抓取企业官网的联系邮箱，随后直接接入 Email Verifier Actor 执行 SMTP 邮箱存活性校验，仅保留真实可投递的联系人用于冷启动外发。\n\n__i18n.common.credentialNote__\n\n## 为什么联锁校验\n抓取工具能够获取网页上公开的邮箱，但部分企业邮箱已废弃。通过联锁校验可在发信前剔除死信箱，保护外发域名信誉。\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "triggerName": "输入域名列表",
+        "findName": "查询联系方式 (Apify)",
+        "extractEmailsName": "提取挖掘出的邮箱列表",
+        "verifyName": "校验邮箱存活性 (Apify)",
+        "filterDeliverableName": "筛选真实有效联系人"
+    },
+
+    "t4": {
+        "name": "AI Agent 工具：查询企业联系人与社媒资料",
+        "sticky": "# 为 AI Agent 赋予查询企业联系方式的能力\n\n为 AI Agent 配置企业联系人查询工具，支持挖掘官网邮箱、国际规范电话及社媒链接。例如：*\"帮我查一下 acme.com 的联系人\"*。\n\n__i18n.common.credentialNote__\n\n__i18n.common.costNote__\n\n__i18n.common.actorNote__",
+        "chatTriggerName": "接收聊天消息时",
+        "agentName": "企业联系人调研 Agent",
+        "toolName": "查询联系方式工具",
+        "modelName": "对话模型",
+        "toolDescription": "在网站或企业域名中查找联系信息（邮箱、电话、社媒链接、地址）。必须在 `domains` 数组中传递域名。",
+        "systemPrompt": "你是一个销售线索挖掘助手。当用户询问某家公司的联系方式时，调用查询联系方式工具。清晰列出找到的所有邮箱、电话（带 E.164 格式规范）与社媒链接。若未找到联系人，说明该域名不可访问或未公开联系方式。"
+    }
+}

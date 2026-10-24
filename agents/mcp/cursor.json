@@ -1,0 +1,15 @@
+{
+  "_comment": ".cursor/mcp.json. Add to your Cursor configuration.",
+  "mcpServers": {
+    "website-contact-finder": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.apify.com?tools=sumitr_mardy/website-contact-finder",
+        "--header",
+        "Authorization: Bearer YOUR_APIFY_TOKEN"
+      ]
+    }
+  }
+}

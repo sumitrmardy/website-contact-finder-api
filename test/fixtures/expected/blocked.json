@@ -1,0 +1,42 @@
+{
+  "domain": "bristolcameras.co.uk",
+  "url": "https://bristolcameras.co.uk/",
+  "status": "blocked",
+  "sub_status": "bot_challenge",
+  "emails": [],
+  "phones": [],
+  "socials": [],
+  "organization": {
+    "name": "",
+    "legal_name": "",
+    "street": "",
+    "city": "",
+    "region": "",
+    "postal_code": "",
+    "country": "",
+    "type": ""
+  },
+  "checks": {
+    "dns_resolved": true,
+    "homepage_ok": false,
+    "bot_challenge": true,
+    "json_ld_found": false,
+    "mailto_found": false,
+    "obfuscated_email_decoded": false,
+    "tel_link_found": false,
+    "contact_page_reached": true,
+    "email_on_site_domain": false,
+    "has_contact_form": false
+  },
+  "pages": [
+    "https://bristolcameras.co.uk/",
+    "https://bristolcameras.co.uk/contact",
+    "https://bristolcameras.co.uk/contact-us",
+    "https://bristolcameras.co.uk/about",
+    "https://bristolcameras.co.uk/about-us"
+  ],
+  "pages_crawled": 5,
+  "found_at": "2026-10-19T08:49:36.982Z",
+  "duration_ms": 8237,
+  "error": "HTTP 403"
+}

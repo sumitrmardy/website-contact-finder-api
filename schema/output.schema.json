@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sumitrmardy/website-contact-finder-api/schema/output.schema.json",
+  "title": "Website Contact Finder — output record",
+  "type": "object",
+  "required": [
+    "domain",
+    "status",
+    "sub_status",
+    "emails",
+    "phones",
+    "socials",
+    "pages_crawled"
+  ],
+  "properties": {
+    "domain": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "contacts_found",
+        "no_contacts_found",
+        "blocked",
+        "unreachable"
+      ]
+    },
+    "sub_status": {
+      "type": "string"
+    },
+    "emails": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "is_free_provider": {
+            "type": "boolean"
+          },
+          "on_site_domain": {
+            "type": "boolean"
+          },
+          "source_url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "phones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "e164": {
+            "type": "string"
+          },
+          "raw": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "socials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "organization": {
+      "type": "object"
+    },
+    "checks": {
+      "type": "object"
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pages_crawled": {
+      "type": "integer"
+    },
+    "found_at": {
+      "type": "string"
+    },
+    "duration_ms": {
+      "type": "integer"
+    }
+  }
+}

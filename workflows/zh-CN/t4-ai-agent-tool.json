@@ -1,0 +1,137 @@
+{
+  "name": "AI Agent 工具：查询企业联系人与社媒资料",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# 为 AI Agent 赋予查询企业联系方式的能力\n\n为 AI Agent 配置企业联系人查询工具，支持挖掘官网邮箱、国际规范电话及社媒链接。例如：*\"帮我查一下 acme.com 的联系人\"*。\n\n## 配置（仅需一次）\n\n**1. 获取 Apify Token** — https://console.apify.com/settings/integrations\n\n**2. 创建 n8n 凭据**\n凭据 → 新建 → **Header Auth**\n- 名称: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer 你的_APIFY_TOKEN`\n\n所有 HTTP 节点均已配置指向该凭据，工作流文件中不包含任何密钥。\n\n## 计费说明\n\n按事件付费：成功找到联系方式（邮箱或电话）的域名每个 $0.006（Gold 阶梯低至 $0.003，千个起价 $3.00）。被拦截、无法访问或无联系信息的域名完全免费。\n\n当前价格详情：https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor 页面：https://apify.com/sumitr_mardy/website-contact-finder\n模板与开源仓库：https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 800,
+        "width": 420,
+        "color": 4
+      },
+      "id": "t4-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "t4-chat",
+      "name": "接收聊天消息时",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        340,
+        60
+      ],
+      "webhookId": "contact-research-agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "你是一个销售线索挖掘助手。当用户询问某家公司的联系方式时，调用查询联系方式工具。清晰列出找到的所有邮箱、电话（带 E.164 格式规范）与社媒链接。若未找到联系人，说明该域名不可访问或未公开联系方式。"
+        }
+      },
+      "id": "t4-agent",
+      "name": "企业联系人调研 Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        600,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "t4-model",
+      "name": "对话模型",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "在网站或企业域名中查找联系信息（邮箱、电话、社媒链接、地址）。必须在 `domains` 数组中传递域名。",
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"domains\": {domains}\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "domains",
+              "description": "A JSON array of domains to crawl for contacts, e.g. [\"stripe.com\"].",
+              "type": "json"
+            }
+          ]
+        },
+        "optimizeResponse": false
+      },
+      "id": "t4-tool",
+      "name": "查询联系方式工具",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "接收聊天消息时": {
+      "main": [
+        [
+          {
+            "node": "企业联系人调研 Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "对话模型": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "企业联系人调研 Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询联系方式工具": {
+      "ai_tool": [
+        [
+          {
+            "node": "企业联系人调研 Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

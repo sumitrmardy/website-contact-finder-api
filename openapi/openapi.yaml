@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Website Contact Finder API
+  description: Crawl websites for emails, phone numbers, and social media links.
+  version: 1.0.0
+servers:
+  - url: https://api.apify.com/v2
+paths:
+  /acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items:
+    post:
+      summary: Crawl domains for contacts synchronously
+      operationId: findContacts
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domains
+              properties:
+                domains:
+                  type: array
+                  items:
+                    type: string
+                  description: Domains or URLs to search.
+                maxPagesPerDomain:
+                  type: integer
+                  default: 5
+      responses:
+        '200':
+          description: Array of contact results per domain
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

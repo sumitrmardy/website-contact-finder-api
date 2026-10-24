@@ -1,0 +1,70 @@
+{
+  "domain": "sevenoakssoundandvision.co.uk",
+  "url": "https://www.sevenoakssoundandvision.co.uk/",
+  "status": "contacts_found",
+  "sub_status": "email_and_phone",
+  "emails": [
+    {
+      "email": "support@ssav.com",
+      "type": "generic",
+      "is_free_provider": false,
+      "on_site_domain": false,
+      "source_url": "https://www.sevenoakssoundandvision.co.uk/"
+    }
+  ],
+  "phones": [
+    {
+      "e164": "+443330164775",
+      "raw": "0333 016 4775",
+      "country": "GB",
+      "confidence": "low",
+      "source_url": "https://www.sevenoakssoundandvision.co.uk/"
+    }
+  ],
+  "socials": [
+    {
+      "network": "facebook",
+      "url": "https://www.facebook.com/pages"
+    },
+    {
+      "network": "instagram",
+      "url": "https://www.instagram.com/sevenoakssoundandvision"
+    },
+    {
+      "network": "twitter",
+      "url": "https://twitter.com/sevenoaks_ssav"
+    },
+    {
+      "network": "youtube",
+      "url": "https://www.youtube.com/c/sevenoaks"
+    }
+  ],
+  "organization": {
+    "name": "",
+    "legal_name": "",
+    "street": "",
+    "city": "",
+    "region": "",
+    "postal_code": "",
+    "country": "",
+    "type": ""
+  },
+  "checks": {
+    "dns_resolved": true,
+    "homepage_ok": true,
+    "bot_challenge": false,
+    "json_ld_found": false,
+    "mailto_found": true,
+    "obfuscated_email_decoded": false,
+    "tel_link_found": false,
+    "contact_page_reached": false,
+    "email_on_site_domain": false,
+    "has_contact_form": true
+  },
+  "pages": [
+    "https://www.sevenoakssoundandvision.co.uk/"
+  ],
+  "pages_crawled": 1,
+  "found_at": "2026-10-19T08:49:30.887Z",
+  "duration_ms": 2142
+}

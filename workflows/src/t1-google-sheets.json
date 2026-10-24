@@ -1,0 +1,169 @@
+{
+  "name": "__i18n.t1.name__",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "__i18n.t1.sticky__",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t1-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "t1-read-sheet-manual",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "t1-read-sheet",
+      "name": "__i18n.t1.sheetReadName__",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/__link.actorId__/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t1-find",
+      "name": "__i18n.t1.findName__",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const r = item.json;\n  return {\n    json: {\n      domain: r.domain || '',\n      status: r.status || '',\n      emails: (r.emails || []).map(e => e.email).join(', '),\n      phones: (r.phones || []).map(p => p.e164 || p.raw).join(', '),\n      socials: (r.socials || []).map(s => s.url).join(', '),\n      enriched_at: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "id": "t1-format",
+      "name": "__i18n.t1.formatName__",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        }
+      },
+      "id": "t1-write-sheet",
+      "name": "__i18n.t1.sheetWriteName__",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "__i18n.t1.sheetReadName__": {
+      "main": [
+        [
+          {
+            "node": "__i18n.t1.findName__",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "__i18n.t1.findName__": {
+      "main": [
+        [
+          {
+            "node": "__i18n.t1.formatName__",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "__i18n.t1.formatName__": {
+      "main": [
+        [
+          {
+            "node": "__i18n.t1.sheetWriteName__",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "__i18n.t1.sheetReadName__",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

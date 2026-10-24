@@ -1,0 +1,14 @@
+{
+    "_comment": "Single source for every outbound link and the price string. Nothing else in the repo may hardcode these — scripts/build-workflows.mjs injects them, and scripts/validate.mjs fails the build if a hardcoded Apify URL or price appears anywhere else.",
+    "actorUrl": "https://apify.com/sumitr_mardy/website-contact-finder",
+    "actorPricingUrl": "https://apify.com/sumitr_mardy/website-contact-finder/pricing",
+    "actorApiUrl": "https://apify.com/sumitr_mardy/website-contact-finder/api",
+    "actorId": "sumitr_mardy~website-contact-finder",
+    "_affiliate": "Empty on purpose — the owner has not registered for the Apify Affiliate Program yet.",
+    "affiliateParam": "",
+    "repoUrl": "https://github.com/sumitrmardy/website-contact-finder-api",
+    "apifyConsoleUrl": "https://console.apify.com",
+    "apifyTokenUrl": "https://console.apify.com/settings/integrations",
+    "_price": "Pricing is pay-per-event: $0.006 per domain with contacts found (down to $0.003 on Gold tier, from $3.00 per 1k). Blocked and zero-contact domains are free.",
+    "priceFromPer1k": "$3.00"
+}

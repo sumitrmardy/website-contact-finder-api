@@ -1,0 +1,215 @@
+{
+  "name": "联系人挖掘与邮箱真实性校验流水线 (挖掘 → 校验 → 保留有效邮箱)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# 挖掘 + 验证联锁流水线\n\n先批量抓取企业官网的联系邮箱，随后直接接入 Email Verifier Actor 执行 SMTP 邮箱存活性校验，仅保留真实可投递的联系人用于冷启动外发。\n\n## 配置（仅需一次）\n\n**1. 获取 Apify Token** — https://console.apify.com/settings/integrations\n\n**2. 创建 n8n 凭据**\n凭据 → 新建 → **Header Auth**\n- 名称: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer 你的_APIFY_TOKEN`\n\n所有 HTTP 节点均已配置指向该凭据，工作流文件中不包含任何密钥。\n\n## 为什么联锁校验\n抓取工具能够获取网页上公开的邮箱，但部分企业邮箱已废弃。通过联锁校验可在发信前剔除死信箱，保护外发域名信誉。\n\n## 计费说明\n\n按事件付费：成功找到联系方式（邮箱或电话）的域名每个 $0.006（Gold 阶梯低至 $0.003，千个起价 $3.00）。被拦截、无法访问或无联系信息的域名完全免费。\n\n当前价格详情：https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor 页面：https://apify.com/sumitr_mardy/website-contact-finder\n模板与开源仓库：https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t3-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "t3-trigger-manual",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c993763f-d01a-4416-9520-354af6038de0",
+              "name": "domain",
+              "value": "mud-dock.co.uk",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "t3-trigger",
+      "name": "输入域名列表",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t3-find",
+      "name": "查询联系方式 (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const emails = [];\nfor (const item of $input.all()) {\n  for (const e of item.json.emails || []) {\n    if (e.email) emails.push(e.email);\n  }\n}\nif (emails.length === 0) return [];\nreturn [{\n  json: { emails }\n}];"
+      },
+      "id": "t3-extract-emails",
+      "name": "提取挖掘出的邮箱列表",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~email-verifier/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ emails: $json.emails }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t3-verify",
+      "name": "校验邮箱存活性 (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ad2b18a1-c610-480e-b4aa-d3f838a4904b",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "deliverable",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "t3-filter-deliverable",
+      "name": "筛选真实有效联系人",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "输入域名列表": {
+      "main": [
+        [
+          {
+            "node": "查询联系方式 (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询联系方式 (Apify)": {
+      "main": [
+        [
+          {
+            "node": "提取挖掘出的邮箱列表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取挖掘出的邮箱列表": {
+      "main": [
+        [
+          {
+            "node": "校验邮箱存活性 (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "校验邮箱存活性 (Apify)": {
+      "main": [
+        [
+          {
+            "node": "筛选真实有效联系人",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "输入域名列表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

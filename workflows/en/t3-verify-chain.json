@@ -1,0 +1,215 @@
+{
+  "name": "Contact Finder to Email Verifier Pipeline (Find → Verify → Keep Deliverable)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Contact Finder to Verifier Chain\n\nScrapes contact emails for a list of company domains, then immediately chains them into the Email Verifier Actor to confirm mailboxes exist. Only keeps deliverable addresses for cold outreach.\n\n## Setup (once)\n\n**1. Get an Apify token** — https://console.apify.com/settings/integrations\n\n**2. Create the n8n credential**\nCredentials → New → **Header Auth**\n- Name: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer YOUR_APIFY_TOKEN`\n\nEvery HTTP node here points at that credential by name. No token is stored in this file.\n\n## Why chain with verification\nContact scrapers find mailto links and text patterns, but some inboxes are defunct. Chaining verification drops invalid syntax and dead mailboxes before they hit your sending domain.\n\n## Cost\n\nPay-per-event: $0.006 per domain where a contact (email or phone) is found (down to $0.003 on Gold tier, from $3.00 per 1,000). Blocked, unreachable, and zero-contact domains are completely free.\n\nCurrent pricing: https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor: https://apify.com/sumitr_mardy/website-contact-finder\nTemplates & docs: https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t3-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "t3-trigger-manual",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c993763f-d01a-4416-9520-354af6038de0",
+              "name": "domain",
+              "value": "mud-dock.co.uk",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "t3-trigger",
+      "name": "Domains input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t3-find",
+      "name": "Find contacts (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const emails = [];\nfor (const item of $input.all()) {\n  for (const e of item.json.emails || []) {\n    if (e.email) emails.push(e.email);\n  }\n}\nif (emails.length === 0) return [];\nreturn [{\n  json: { emails }\n}];"
+      },
+      "id": "t3-extract-emails",
+      "name": "Extract found email list",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~email-verifier/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ emails: $json.emails }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t3-verify",
+      "name": "Verify emails (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ad2b18a1-c610-480e-b4aa-d3f838a4904b",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "deliverable",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "t3-filter-deliverable",
+      "name": "Filter deliverable leads",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Domains input": {
+      "main": [
+        [
+          {
+            "node": "Find contacts (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find contacts (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Extract found email list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract found email list": {
+      "main": [
+        [
+          {
+            "node": "Verify emails (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify emails (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Filter deliverable leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Domains input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

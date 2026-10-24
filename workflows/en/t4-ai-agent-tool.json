@@ -1,0 +1,137 @@
+{
+  "name": "AI Agent tool: look up company contact details",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Give an AI Agent the ability to look up contacts\n\nAn AI Agent with a tool to find emails, phone numbers, and social media links for any business domain. Ask it: *\"Find contact info for acme.com\"*.\n\n## Setup (once)\n\n**1. Get an Apify token** — https://console.apify.com/settings/integrations\n\n**2. Create the n8n credential**\nCredentials → New → **Header Auth**\n- Name: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer YOUR_APIFY_TOKEN`\n\nEvery HTTP node here points at that credential by name. No token is stored in this file.\n\n## Cost\n\nPay-per-event: $0.006 per domain where a contact (email or phone) is found (down to $0.003 on Gold tier, from $3.00 per 1,000). Blocked, unreachable, and zero-contact domains are completely free.\n\nCurrent pricing: https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor: https://apify.com/sumitr_mardy/website-contact-finder\nTemplates & docs: https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 800,
+        "width": 420,
+        "color": 4
+      },
+      "id": "t4-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "t4-chat",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        340,
+        60
+      ],
+      "webhookId": "contact-research-agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a sales intelligence assistant. When asked for contact details about a company, use the Find Contacts Tool. Summarize all discovered emails, phone numbers (with E.164 formatted numbers), and social profiles clearly. If no contacts are found, explain that the domain is either unreachable or publishes no public contact info."
+        }
+      },
+      "id": "t4-agent",
+      "name": "Contact Research Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        600,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "t4-model",
+      "name": "Chat model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Searches a website or business domain for contact information (emails, phones, social links, addresses). Provide an array of domains in `domains`.",
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"domains\": {domains}\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "domains",
+              "description": "A JSON array of domains to crawl for contacts, e.g. [\"stripe.com\"].",
+              "type": "json"
+            }
+          ]
+        },
+        "optimizeResponse": false
+      },
+      "id": "t4-tool",
+      "name": "Find Contacts Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Contact Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Contact Research Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Contacts Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Contact Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

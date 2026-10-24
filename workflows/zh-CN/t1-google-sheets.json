@@ -1,0 +1,169 @@
+{
+  "name": "从 Google 表格批量抓取企业联系方式 (邮箱、电话、社媒)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Google 表格企业域名联系人挖掘\n\n从 Google 表格读取待查询域名，自动挖掘企业邮箱、电话与社交媒体链接，并将结果写回表格。重复运行仅处理未补全的行。\n\n## 表格所需列\n`domain` · `status` · `emails` · `phones` · `socials` · `enriched_at`\n\n## 配置（仅需一次）\n\n**1. 获取 Apify Token** — https://console.apify.com/settings/integrations\n\n**2. 创建 n8n 凭据**\n凭据 → 新建 → **Header Auth**\n- 名称: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer 你的_APIFY_TOKEN`\n\n所有 HTTP 节点均已配置指向该凭据，工作流文件中不包含任何密钥。\n\n## 计费说明\n\n按事件付费：成功找到联系方式（邮箱或电话）的域名每个 $0.006（Gold 阶梯低至 $0.003，千个起价 $3.00）。被拦截、无法访问或无联系信息的域名完全免费。\n\n当前价格详情：https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor 页面：https://apify.com/sumitr_mardy/website-contact-finder\n模板与开源仓库：https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t1-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "t1-read-sheet-manual",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "t1-read-sheet",
+      "name": "从表格读取域名",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t1-find",
+      "name": "查询联系方式 (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const r = item.json;\n  return {\n    json: {\n      domain: r.domain || '',\n      status: r.status || '',\n      emails: (r.emails || []).map(e => e.email).join(', '),\n      phones: (r.phones || []).map(p => p.e164 || p.raw).join(', '),\n      socials: (r.socials || []).map(s => s.url).join(', '),\n      enriched_at: new Date().toISOString()\n    }\n  };\n});"
+      },
+      "id": "t1-format",
+      "name": "格式化联系人数据",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        }
+      },
+      "id": "t1-write-sheet",
+      "name": "写入联系人至表格",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1040,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "从表格读取域名": {
+      "main": [
+        [
+          {
+            "node": "查询联系方式 (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询联系方式 (Apify)": {
+      "main": [
+        [
+          {
+            "node": "格式化联系人数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "格式化联系人数据": {
+      "main": [
+        [
+          {
+            "node": "写入联系人至表格",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "从表格读取域名",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

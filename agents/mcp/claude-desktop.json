@@ -1,0 +1,18 @@
+{
+  "_comment": "claude_desktop_config.json. Pick ONE entry and restart Claude Desktop.",
+  "mcpServers": {
+    "website-contact-finder": {
+      "url": "https://mcp.apify.com?tools=sumitr_mardy/website-contact-finder"
+    },
+    "website-contact-finder-with-token": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.apify.com?tools=sumitr_mardy/website-contact-finder",
+        "--header",
+        "Authorization: Bearer YOUR_APIFY_TOKEN"
+      ]
+    }
+  }
+}

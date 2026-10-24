@@ -1,0 +1,23 @@
+{
+  "type": "function",
+  "function": {
+    "name": "find_website_contacts",
+    "description": "Finds email addresses, phone numbers, and social media links for business websites/domains using Website Contact Finder.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "domains": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of domains or homepage URLs to crawl for contact information."
+        },
+        "maxPagesPerDomain": {
+          "type": "integer",
+          "default": 5,
+          "description": "Maximum pages to crawl per domain."
+        }
+      },
+      "required": ["domains"]
+    }
+  }
+}

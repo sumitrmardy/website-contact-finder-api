@@ -1,0 +1,163 @@
+{
+  "name": "CRM 新建企业自动补全联系人 (HubSpot / Pipedrive)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# 实时 CRM 企业信息补全\n\n当 HubSpot 或 Pipedrive 创建新企业时自动触发，提取官网域名，抓取企业电话与邮箱并更新回 CRM 属性。\n\n## 配置（仅需一次）\n\n**1. 获取 Apify Token** — https://console.apify.com/settings/integrations\n\n**2. 创建 n8n 凭据**\n凭据 → 新建 → **Header Auth**\n- 名称: `Apify API`\n- Header name: `Authorization`\n- Header value: `Bearer 你的_APIFY_TOKEN`\n\n所有 HTTP 节点均已配置指向该凭据，工作流文件中不包含任何密钥。\n\n## 计费说明\n\n按事件付费：成功找到联系方式（邮箱或电话）的域名每个 $0.006（Gold 阶梯低至 $0.003，千个起价 $3.00）。被拦截、无法访问或无联系信息的域名完全免费。\n\n当前价格详情：https://apify.com/sumitr_mardy/website-contact-finder/pricing\n\nActor 页面：https://apify.com/sumitr_mardy/website-contact-finder\n模板与开源仓库：https://github.com/sumitrmardy/website-contact-finder-api",
+        "height": 520,
+        "width": 380,
+        "color": 4
+      },
+      "id": "t2-sticky",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "company.created",
+        "options": {}
+      },
+      "id": "t2-trigger",
+      "name": "新建企业触发器",
+      "type": "n8n-nodes-base.hubspotTrigger",
+      "typeVersion": 1,
+      "position": [
+        320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/sumitr_mardy~website-contact-finder/run-sync-get-dataset-items",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ domains: [ $json.properties && $json.properties.domain ? $json.properties.domain.value : $json.domain ] }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "t2-find",
+      "name": "查询联系方式 (Apify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "apify-api",
+          "name": "Apify API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "149c2e0f-7818-497a-9ee6-d955bcd22595",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "contacts_found",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "t2-filter",
+      "name": "过滤有结果的企业",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "company",
+        "operation": "update",
+        "companyId": "={{ $('New Company Created').item.json.objectId || $('New Company Created').item.json.id }}",
+        "updateFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "phone",
+                "value": "={{ ($json.phones && $json.phones[0] && ($json.phones[0].e164 || $json.phones[0].raw)) || '' }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "t2-update-crm",
+      "name": "更新企业资料至 CRM",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "新建企业触发器": {
+      "main": [
+        [
+          {
+            "node": "查询联系方式 (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询联系方式 (Apify)": {
+      "main": [
+        [
+          {
+            "node": "过滤有结果的企业",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "过滤有结果的企业": {
+      "main": [
+        [
+          {
+            "node": "更新企业资料至 CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
