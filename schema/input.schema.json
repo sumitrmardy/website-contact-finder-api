@@ -10,7 +10,6 @@
       "description": "Domains or URLs to search for contact details. One row is returned per domain, and only domains where a contact is found are charged.",
       "editor": "stringList",
       "prefill": [
-        "angelnumbercodex.com",
         "stripe.com",
         "mud-dock.co.uk",
         "violinshop.com"

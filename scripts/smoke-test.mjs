@@ -17,7 +17,7 @@ if (!TOKEN) {
     process.exit(1);
 }
 
-const domains = ['angelnumbercodex.com', 'mud-dock.co.uk'];
+const domains = ['violinshop.com', 'mud-dock.co.uk'];
 console.log(`fetching contacts for ${domains.length} domain(s) against live Actor…`);
 
 const startedAt = Date.now();
